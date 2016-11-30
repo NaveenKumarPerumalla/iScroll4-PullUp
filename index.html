@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PullDown Refresh and PullUp Loading</title>
+<script type="text/javascript">
+
+var myScroll,
+	pullDownEl, pullDownOffset,
+	pullUpEl, pullUpOffset,
+	generatedCount = 0;
+	var page =2 ;
+	
+function pullDownAction () {
+	setTimeout(function () {
+		reloadPage();
+	}, 500);
+}
+
+function pullUpAction () {
+	setTimeout(function () {
+		var el, li, i;
+		el = document.getElementById('thelist');
+		//$._loading('loading>>>');
+		$.get("/Group/home/mine/",{page:page,keyword:'{:I("get.keyword")}'},function(html){
+			if(html=='')
+			{
+				if($(".no_more_data").length==0)
+				{
+					$(".n_main_ul").append("<li class='n_2nd_updt2 no_more_data'><span>暂无更多数据</span></li>")
+					$("#pullUp").remove();
+				}
+				else
+				{
+					$(".no_more_data").remove();
+					$(".n_main_ul").append("<li class='n_2nd_updt2 no_more_data'><span>暂无更多数据</span></li>")
+				}
+				
+			}
+			else
+			{
+				page++;
+				$(".n_main_ul").append(html).css('overflow-y','scroll');
+			}
+	
+			$._doneLoading();
+		});
+	
+     	myScroll.refresh();	
+	}, 500);
+
+}
+
+
+
+
+function loaded() {
+	pullDownEl = document.getElementById('pullDown');
+	pullDownOffset = pullDownEl.offsetHeight;
+	pullUpEl = document.getElementById('pullUp');	
+	pullUpOffset = pullUpEl.offsetHeight;
+	
+	myScroll = new iScroll('wrapper', {
+		useTransition: true,
+		topOffset: pullDownOffset,
+		onRefresh: function () {
+			if (pullDownEl.className.match('loading')) {
+				pullDownEl.className = '';
+				pullDownEl.querySelector('.pullDownLabel').innerHTML = 'Pull down to refresh...';
+			} else if (pullUpEl.className.match('loading')) {
+				pullUpEl.className = '';
+				pullUpEl.querySelector('.pullUpLabel').innerHTML = 'Pull up to load more...';
+			}
+		},
+		onScrollMove: function () {
+			if (this.y > 5 && !pullDownEl.className.match('flip')) {
+				pullDownEl.className = 'flip';
+				pullDownEl.querySelector('.pullDownLabel').innerHTML = 'Release to refresh...';
+				this.minScrollY = 0;
+			} else if (this.y < 5 && pullDownEl.className.match('flip')) {
+				pullDownEl.className = '';
+				pullDownEl.querySelector('.pullDownLabel').innerHTML = 'Pull down to refresh...';
+				this.minScrollY = -pullDownOffset;
+			} else if (this.y < (this.maxScrollY - 5) && !pullUpEl.className.match('flip')) {
+				pullUpEl.className = 'flip';
+				pullUpEl.querySelector('.pullUpLabel').innerHTML = 'Release to refresh...';
+				this.maxScrollY = this.maxScrollY;
+			} else if (this.y > (this.maxScrollY + 5) && pullUpEl.className.match('flip')) {
+				pullUpEl.className = '';
+				pullUpEl.querySelector('.pullUpLabel').innerHTML = 'Pull up to load more...';
+				this.maxScrollY = pullUpOffset;
+			}
+		},
+		onScrollEnd: function () {
+			if (pullDownEl.className.match('flip')) {
+				pullDownEl.className = 'loading';
+				pullDownEl.querySelector('.pullDownLabel').innerHTML = 'Loading...';				
+				pullDownAction();	// Execute custom function (ajax call?)
+			} else if (pullUpEl.className.match('flip')) {
+				pullUpEl.className = 'loading';
+				pullUpEl.querySelector('.pullUpLabel').innerHTML = 'Loading...';				
+				pullUpAction();	// Execute custom function (ajax call?)
+			}
+		}
+	});
+	
+	setTimeout(function () { document.getElementById('wrapper').style.left = '0'; }, 800);
+}
+
+document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
+
+document.addEventListener('DOMContentLoaded', function () { setTimeout(loaded, 200); }, false);
+</script>
+</head>
+
+<body>
+
+<div id="wrapper" class="mani_nHome">
+        <div class="mainpage" id="home_mine_msg_list">
+            <div id="pullDown">
+                <span class="pullDownIcon"></span><span class="pullDownLabel">Pull down to refresh...</span>
+            </div>
+            <ul class="n_main_ul" id="thelist">                        
+            <li class="n_2nd_updt">Hello1</li>
+            <li class="n_updates">Hello2</li>
+            </ul>
+            <div id="pullUp">
+                <span class="pullUpIcon"></span><span class="pullUpLabel">Pull up to refresh...</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
